@@ -1,5 +1,6 @@
 package com.example.api_gestion_de_taches_demontis.Controller;
 
+import com.example.api_gestion_de_taches_demontis.DTO.CategoryDTO;
 import com.example.api_gestion_de_taches_demontis.Entity.Category;
 import com.example.api_gestion_de_taches_demontis.Repository.CategoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,15 +23,16 @@ public class CategoryController {
 
     @GetMapping
     @Operation(summary = "Récupérer toutes les catégories")
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public List<CategoryDTO> getAllCategories() {
+        List<Category> categories = categoryRepository.findAll();
+        return CategoryDTO.fromCategoryList(categories);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer une catégorie par son ID")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
-        Optional<Category> category = categoryRepository.findById(id);
-        return category.map(ResponseEntity::ok)
+    public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
+        Optional<Category> categoryOpt = categoryRepository.findById(id);
+        return categoryOpt.map(category -> ResponseEntity.ok(new CategoryDTO(category)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -42,19 +44,19 @@ public class CategoryController {
         }
 
         Category savedCategory = categoryRepository.save(category);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedCategory);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new CategoryDTO(savedCategory));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour une catégorie")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
         return categoryRepository.findById(id)
                 .map(category -> {
                     category.setName(categoryDetails.getName());
                     category.setColor(categoryDetails.getColor());
 
                     Category updatedCategory = categoryRepository.save(category);
-                    return ResponseEntity.ok(updatedCategory);
+                    return ResponseEntity.ok(new CategoryDTO(updatedCategory));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
