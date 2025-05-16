@@ -1,5 +1,6 @@
 package com.example.api_gestion_de_taches_demontis.Controller;
 
+import com.example.api_gestion_de_taches_demontis.DTO.ProjectDTO;
 import com.example.api_gestion_de_taches_demontis.Entity.Project;
 import com.example.api_gestion_de_taches_demontis.Entity.User;
 import com.example.api_gestion_de_taches_demontis.Repository.ProjectRepository;
@@ -27,24 +28,27 @@ public class ProjectController {
 
     @GetMapping
     @Operation(summary = "Récupérer tous les projets")
-    public List<Project> getAllProjects() {
-        return projectRepository.findAll();
+    public List<ProjectDTO> getAllProjects() {
+        List<Project> projects = projectRepository.findAll();
+        return ProjectDTO.fromProjectList(projects);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un projet par son ID")
-    public ResponseEntity<Project> getProjectById(@PathVariable Long id) {
-        Optional<Project> project = projectRepository.findById(id);
-        return project.map(ResponseEntity::ok)
+    public ResponseEntity<ProjectDTO> getProjectById(@PathVariable Long id) {
+        Optional<Project> projectOpt = projectRepository.findById(id);
+        return projectOpt.map(project -> ResponseEntity.ok(new ProjectDTO(project)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/user/{userId}")
     @Operation(summary = "Récupérer les projets d'un utilisateur")
-    public ResponseEntity<List<Project>> getUserProjects(@PathVariable Long userId) {
+    public ResponseEntity<List<ProjectDTO>> getUserProjects(@PathVariable Long userId) {
         Optional<User> user = userRepository.findById(userId);
-        return user.map(u -> ResponseEntity.ok(projectRepository.findByOwner(u)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        return user.map(u -> {
+            List<Project> projects = projectRepository.findByOwner(u);
+            return ResponseEntity.ok(ProjectDTO.fromProjectList(projects));
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -58,14 +62,14 @@ public class ProjectController {
 
                     project.setOwner(user);
                     Project savedProject = projectRepository.save(project);
-                    return ResponseEntity.status(HttpStatus.CREATED).body(savedProject);
+                    return ResponseEntity.status(HttpStatus.CREATED).body(new ProjectDTO(savedProject));
                 })
                 .orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour un projet")
-    public ResponseEntity<Project> updateProject(@PathVariable Long id, @RequestBody Project projectDetails) {
+    public ResponseEntity<ProjectDTO> updateProject(@PathVariable Long id, @RequestBody Project projectDetails) {
         return projectRepository.findById(id)
                 .map(project -> {
                     project.setName(projectDetails.getName());
@@ -74,7 +78,7 @@ public class ProjectController {
                     project.setEndDate(projectDetails.getEndDate());
 
                     Project updatedProject = projectRepository.save(project);
-                    return ResponseEntity.ok(updatedProject);
+                    return ResponseEntity.ok(new ProjectDTO(updatedProject));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

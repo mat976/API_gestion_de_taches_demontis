@@ -1,5 +1,6 @@
 package com.example.api_gestion_de_taches_demontis.Controller;
 
+import com.example.api_gestion_de_taches_demontis.DTO.UserDTO;
 import com.example.api_gestion_de_taches_demontis.Entity.User;
 import com.example.api_gestion_de_taches_demontis.Repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,15 +23,16 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "Récupérer tous les utilisateurs")
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDTO> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return UserDTO.fromUserList(users);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Récupérer un utilisateur par son ID")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        Optional<User> user = userRepository.findById(id);
-        return user.map(ResponseEntity::ok)
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        return userOpt.map(user -> ResponseEntity.ok(new UserDTO(user)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -45,12 +47,12 @@ public class UserController {
         }
 
         User savedUser = userRepository.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new UserDTO(savedUser));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Mettre à jour un utilisateur")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody User userDetails) {
         return userRepository.findById(id)
                 .map(user -> {
                     user.setUsername(userDetails.getUsername());
@@ -59,7 +61,7 @@ public class UserController {
                         user.setPassword(userDetails.getPassword());
                     }
                     User updatedUser = userRepository.save(user);
-                    return ResponseEntity.ok(updatedUser);
+                    return ResponseEntity.ok(new UserDTO(updatedUser));
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

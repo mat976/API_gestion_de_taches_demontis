@@ -1,5 +1,6 @@
 package com.example.api_gestion_de_taches_demontis.Entity;
 
+import com.example.api_gestion_de_taches_demontis.DTO.UserDTO;
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +8,20 @@ import java.util.List;
 @Entity
 @Table(name = "users")
 public class User extends BaseEntity {
+
+    // Constructeur par défaut
+    public User() {
+    }
+    
+    // Constructeur à partir d'un DTO
+    public User(UserDTO userDTO) {
+        this.setId(userDTO.getId());
+        this.setCreatedAt(userDTO.getCreatedAt());
+        this.setUpdatedAt(userDTO.getUpdatedAt());
+        this.username = userDTO.getUsername();
+        this.email = userDTO.getEmail();
+        this.password = userDTO.getPassword();
+    }
 
     @Column(nullable = false, unique = true)
     private String username;
